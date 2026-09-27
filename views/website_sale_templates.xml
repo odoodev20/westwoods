@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============================================================
+         PRODUCT PAGE – unit on main price + clean pricing info box
+         ============================================================ -->
+    <template id="product_price_westwoods_unit" inherit_id="website_sale.product_price" name="WestWoods Main Price Unit">
+        <!-- Append technical unit after the main price (e.g. / m²) -->
+        <xpath expr="//span[hasclass('oe_price')]|//h3//span[hasclass('oe_currency_value')]|//*[hasclass('product_price')]" position="attributes">
+            <!-- no-op on attributes; injection below is more reliable -->
+        </xpath>
+    </template>
+
+    <template id="product_westwoods_pricing_info" inherit_id="website_sale.product" name="WestWoods Product Pricing Info">
+        <!-- Append / m² (or lm) next to the main product price -->
+        <xpath expr="//div[hasclass('o_wsale_product_details_content_section_price')]" position="inside">
+            <t t-set="ww_flow_main" t-value="product.x_product_flow"/>
+            <t t-if="ww_flow_main">
+                <t t-set="ww_tech_unit_main"
+                   t-value="{'Sheet': 'm²', 'Piece': 'lm', 'Roll': 'm²', 'Pack': 'm²'}.get(ww_flow_main, '')"/>
+                <span class="westwoods-main-price-unit text-muted fs-5 ms-1"
+                      id="ww_main_price_unit">
+                    / <t t-esc="ww_tech_unit_main"/>
+                </span>
+            </t>
+        </xpath>
+
+        <!-- Pricing information box (cleaned) -->
+        <xpath expr="//div[hasclass('o_wsale_product_details_content_section_price')]" position="after">
+            <t t-set="ww_flow" t-value="product.x_product_flow"/>
+            <t t-if="ww_flow">
+                <t t-set="ww_variant_id" t-value="product._get_first_possible_variant_id()"/>
+                <t t-set="ww_product"
+                   t-value="ww_variant_id and product.env['product.product'].browse(ww_variant_id) or product.product_variant_id"/>
+                <t t-set="ww_tech" t-value="ww_product._get_active_technical_value() if ww_product else 1.0"/>
+                <t t-set="ww_unit_label"
+                   t-value="{'Sheet': 'platen', 'Piece': 'stuks', 'Roll': 'rollen', 'Pack': 'pakken'}.get(ww_flow, '')"/>
+                <t t-set="ww_factor_label"
+                   t-value="{'Sheet': 'm² per plaat', 'Piece': 'lm per stuk', 'Roll': 'm² per rol', 'Pack': 'm² per pak'}.get(ww_flow, '')"/>
+                <t t-set="ww_tech_unit"
+                   t-value="{'Sheet': 'm²', 'Piece': 'lm', 'Roll': 'm²', 'Pack': 'm²'}.get(ww_flow, '')"/>
+                <t t-set="ww_unit_price" t-value="combination_info.get('price', product.list_price) or 0.0"/>
+
+                <div class="o_wsale_product_details_content_section mb-4 westwoods-pricing-box border rounded p-3 bg-light"
+                     id="westwoods_pricing_box"
+                     t-att-data-factor="ww_tech"
+                     t-att-data-flow="ww_flow"
+                     t-att-data-unit-label="ww_unit_label"
+                     t-att-data-tech-unit="ww_tech_unit"
+                     t-att-data-unit-price="ww_unit_price"
+                     t-att-data-currency-symbol="website.currency_id.symbol">
+                    <div class="fw-semibold mb-2">Price information</div>
+                    <ul class="list-unstyled mb-2 small">
+                        <li>
+                            <span class="text-muted">Unit price:</span>
+                            <strong class="ms-1">
+                                <span id="ww_display_unit_price"
+                                      t-esc="ww_unit_price"
+                                      t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
+                                <span class="text-muted"> / <span class="ww_tech_unit" t-esc="ww_tech_unit"/></span>
+                            </strong>
+                        </li>
+                        <li>
+                            <span class="text-muted" id="ww_display_factor_label" t-esc="ww_factor_label"/>:
+                            <strong class="ms-1" id="ww_display_factor" t-esc="'%.2f' % ww_tech"/>
+                            <span class="text-muted ms-1 ww_tech_unit" t-esc="ww_tech_unit"/>
+                            <span class="text-muted"> per physical unit</span>
+                        </li>
+                    </ul>
+                    <div class="border-top pt-2 small">
+                        <div class="text-muted mb-1">Calculation for selected quantity:</div>
+                        <div>
+                            <span id="ww_calc_physical">1</span>
+                            <span class="ms-1 ww_unit_label" t-esc="ww_unit_label"/>
+                            =
+                            <span id="ww_calc_technical" class="ms-1" t-esc="'%.2f' % ww_tech"/>
+                            <span class="ms-1 ww_tech_unit" t-esc="ww_tech_unit"/>
+                            ×
+                            <span class="ms-1"
+                                  id="ww_calc_unit_price"
+                                  t-esc="ww_unit_price"
+                                  t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
+                            =
+                            <strong class="ms-1" id="ww_calc_total"
+                                    t-esc="ww_unit_price * ww_tech"
+                                    t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- ============================================================
+         CART LINES – physical qty + technical price breakdown
+         ============================================================ -->
+    <template id="cart_lines_westwoods_info" inherit_id="website_sale.cart_lines" name="WestWoods Cart Line Info">
+        <xpath expr="//t[@t-call='website_sale.cart_line_description_following_lines']" position="after">
+            <t t-set="flow" t-value="line.product_id.product_tmpl_id.x_product_flow"/>
+            <t t-if="flow">
+                <t t-set="tech" t-value="line.product_id._get_active_technical_value() or 1.0"/>
+                <t t-set="physical" t-value="line._get_physical_quantity()"/>
+                <t t-set="unit_label"
+                   t-value="{'Sheet': 'platen', 'Piece': 'stuks', 'Roll': 'rollen', 'Pack': 'pakken'}.get(flow, '')"/>
+                <t t-set="tech_unit"
+                   t-value="{'Sheet': 'm²', 'Piece': 'lm', 'Roll': 'm²', 'Pack': 'm²'}.get(flow, '')"/>
+                <div class="small text-muted mt-1 westwoods-cart-line-info">
+                    <span t-esc="'%.0f' % physical if float(physical).is_integer() else '%.2f' % physical"/>
+                    <span class="ms-1" t-esc="unit_label"/>
+                    =
+                    <span class="ms-1" t-esc="'%.2f' % (float(physical) * float(tech))"/>
+                    <span class="ms-1" t-esc="tech_unit"/>
+                    ×
+                    <span class="ms-1"
+                          t-esc="line.price_unit"
+                          t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
+                    / <t t-esc="tech_unit"/>
+                </div>
+            </t>
+        </xpath>
+    </template>
+
+
+    <!-- ============================================================
+         Checkout / payment summary: badge shows physical qty
+         ============================================================ -->
+    <template id="cart_summary_content_westwoods"
+              inherit_id="website_sale.cart_summary_content"
+              name="WestWoods Cart Summary Physical Qty">
+        <xpath expr="//span[hasclass('o_cart_item_count')]" position="replace">
+            <span class="o_cart_item_count badge bg-secondary position-absolute top-0 start-100 translate-middle">
+                <t t-set="ww_badge_qty" t-value="line._get_displayed_quantity()"/>
+                <t t-out="ww_badge_qty"/>
+                <i
+                    t-if="line._get_shop_warning(clear=False)"
+                    class="fa fa-warning"
+                    role="img"
+                    t-att-title="line._get_shop_warning()"
+                    aria-label="Warning"
+                />
+            </span>
+        </xpath>
+    </template>
+</odoo>

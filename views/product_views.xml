@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============================================================
+         Product Template Form: Technical Content page
+         ============================================================ -->
+    <record id="view_product_template_form_westwoods" model="ir.ui.view">
+        <field name="name">product.template.form.westwoods</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Technical Content (No Variants)" name="westwoods_technical">
+                    <group>
+                        <group string="Product Flow">
+                            <field name="x_product_flow"/>
+                        </group>
+                        <group string="Conversion Factors (default for all variants)">
+                            <field name="x_m2_per_plaat"
+                                    invisible="x_product_flow != 'Sheet'"/>
+                            <field name="x_lm_per_stuk"
+                                    invisible="x_product_flow != 'Piece'"/>
+                            <field name="x_m2_per_rol"
+                                    invisible="x_product_flow != 'Roll'"/>
+                            <field name="x_m2_per_pak"
+                                    invisible="x_product_flow != 'Pack'"/>
+                        </group>
+                    </group>
+                    <group string="All Factors (reference)"
+                           invisible="not x_product_flow">
+                        <group>
+                            <field name="x_m2_per_plaat"/>
+                            <field name="x_lm_per_stuk"/>
+                        </group>
+                        <group>
+                            <field name="x_m2_per_rol"/>
+                            <field name="x_m2_per_pak"/>
+                        </group>
+                    </group>
+                    <div class="text-muted" invisible="not x_product_flow">
+                        These values are the default for every variant.
+                        To override per variant: open <strong>Variants</strong> → open a variant
+                        → set the matching <strong>Variant m² / lm</strong> field (leave 0 to use this default).
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ============================================================
+         Product Variant EASY form (opened from Variants smart button)
+         This is the form you see – it has NO notebook.
+         ============================================================ -->
+    <record id="view_product_variant_easy_edit_westwoods" model="ir.ui.view">
+        <field name="name">product.product.view.form.easy.westwoods</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_variant_easy_edit_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@name='pricing']" position="after">
+                <group name="westwoods_variant_factors" string="Technical Content (Variant Override)">
+                    <field name="x_product_flow" readonly="1"/>
+                    <field name="x_variant_m2_per_plaat"
+                            invisible="x_product_flow != 'Sheet'"/>
+                    <field name="x_variant_lm_per_stuk"
+                            invisible="x_product_flow != 'Piece'"/>
+                    <field name="x_variant_m2_per_rol"
+                            invisible="x_product_flow != 'Roll'"/>
+                    <field name="x_variant_m2_per_pak"
+                            invisible="x_product_flow != 'Pack'"/>
+                    <div colspan="2" class="text-muted">
+                        Leave at 0 to use the template default from
+                        <em>Technical Content (No Variants)</em>.
+                    </div>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ============================================================
+         Full product.product form (if opened from Product Variants menu)
+         ============================================================ -->
+    <record id="view_product_product_form_westwoods" model="ir.ui.view">
+        <field name="name">product.product.form.westwoods</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_normal_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Technical Content (Variant)" name="westwoods_technical_variant">
+                    <group>
+                        <group string="Variant Conversion Overrides">
+                            <field name="x_product_flow" readonly="1"/>
+                            <field name="x_variant_m2_per_plaat"/>
+                            <field name="x_variant_lm_per_stuk"/>
+                            <field name="x_variant_m2_per_rol"/>
+                            <field name="x_variant_m2_per_pak"/>
+                        </group>
+                        <group string="Help">
+                            <div class="text-muted">
+                                Leave a field at 0 to fall back to the template-level factor.
+                                Only the factor matching the Product Flow is used.
+                            </div>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ============================================================
+         Variants list: optional columns for quick overview / edit
+         ============================================================ -->
+    <record id="view_product_variant_list_westwoods" model="ir.ui.view">
+        <field name="name">product.product.list.westwoods</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_product_tree_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='lst_price']" position="after">
+                <field name="x_product_flow" optional="hide"/>
+                <field name="x_variant_m2_per_plaat" optional="hide" string="Var. m²/plaat"/>
+                <field name="x_variant_lm_per_stuk" optional="hide" string="Var. lm/stuk"/>
+                <field name="x_variant_m2_per_rol" optional="hide" string="Var. m²/rol"/>
+                <field name="x_variant_m2_per_pak" optional="hide" string="Var. m²/pak"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

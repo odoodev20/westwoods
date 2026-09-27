@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Delivery Slip PDF (Odoo 19).
+        Physical column uses delivered qty when available, otherwise ordered qty.
+    -->
+    <template id="report_delivery_document_westwoods" inherit_id="stock.report_delivery_document">
+        <!-- Headers -->
+        <xpath expr="//th[@name='th_sm_quantity']" position="after">
+            <th name="th_sm_physical" class="text-end">
+                <strong>Physical Units</strong>
+            </th>
+        </xpath>
+        <xpath expr="//th[@name='th_sml_quantity']" position="after">
+            <th name="th_sml_physical" class="text-end">
+                Physical Units
+            </th>
+        </xpath>
+
+        <!-- Non-done moves: prefer product_uom_qty (ordered) when quantity is 0 -->
+        <xpath expr="//table[@name='stock_move_table']/tbody/tr/td[last()]" position="after">
+            <td class="text-end" name="td_sm_physical">
+                <t t-if="move.product_id.product_tmpl_id.x_product_flow">
+                    <t t-set="flow" t-value="move.product_id.product_tmpl_id.x_product_flow"/>
+                    <t t-set="tech" t-value="move.product_id._get_active_technical_value() or 1.0"/>
+                    <t t-set="base_qty" t-value="move.quantity or move.product_uom_qty or 0.0"/>
+                    <t t-set="physical" t-value="(base_qty / tech) if tech else 0.0"/>
+                    <span t-esc="'%.2f' % physical" class="text-nowrap"/>
+                    <t t-if="flow == 'Sheet'"> platen</t>
+                    <t t-elif="flow == 'Piece'"> stuks</t>
+                    <t t-elif="flow == 'Roll'"> rollen</t>
+                    <t t-elif="flow == 'Pack'"> pakken</t>
+                </t>
+            </td>
+        </xpath>
+    </template>
+
+    <!-- Aggregated lines (done, no serials) -->
+    <template id="stock_report_delivery_aggregated_move_lines_westwoods"
+              inherit_id="stock.stock_report_delivery_aggregated_move_lines">
+        <xpath expr="//td[@name='move_line_aggregated_quantity']" position="after">
+            <td class="text-end" name="td_aggregated_physical">
+                <t t-set="product" t-value="aggregated_lines[line].get('product')"/>
+                <t t-if="product and product.product_tmpl_id.x_product_flow">
+                    <t t-set="flow" t-value="product.product_tmpl_id.x_product_flow"/>
+                    <t t-set="tech" t-value="product._get_active_technical_value() or 1.0"/>
+                    <t t-set="qty" t-value="aggregated_lines[line].get('quantity') or aggregated_lines[line].get('qty_ordered') or 0.0"/>
+                    <t t-set="physical" t-value="(qty / tech) if tech else 0.0"/>
+                    <span t-esc="'%.2f' % physical" class="text-nowrap"/>
+                    <t t-if="flow == 'Sheet'"> platen</t>
+                    <t t-elif="flow == 'Piece'"> stuks</t>
+                    <t t-elif="flow == 'Roll'"> rollen</t>
+                    <t t-elif="flow == 'Pack'"> pakken</t>
+                </t>
+            </td>
+        </xpath>
+    </template>
+
+    <!-- Serial/lot lines (done) -->
+    <template id="stock_report_delivery_has_serial_move_line_westwoods"
+              inherit_id="stock.stock_report_delivery_has_serial_move_line">
+        <xpath expr="//td[@name='move_line_lot_quantity']" position="after">
+            <td class="text-end" name="td_serial_physical">
+                <t t-if="move_line.product_id.product_tmpl_id.x_product_flow">
+                    <t t-set="flow" t-value="move_line.product_id.product_tmpl_id.x_product_flow"/>
+                    <t t-set="tech" t-value="move_line.product_id._get_active_technical_value() or 1.0"/>
+                    <t t-set="physical" t-value="(move_line.quantity / tech) if tech else 0.0"/>
+                    <span t-esc="'%.2f' % physical" class="text-nowrap"/>
+                    <t t-if="flow == 'Sheet'"> platen</t>
+                    <t t-elif="flow == 'Piece'"> stuks</t>
+                    <t t-elif="flow == 'Roll'"> rollen</t>
+                    <t t-elif="flow == 'Pack'"> pakken</t>
+                </t>
+            </td>
+        </xpath>
+    </template>
+</odoo>

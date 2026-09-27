@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Sale Order Form: physical quantity columns in order lines -->
+    <record id="view_order_form_westwoods" model="ir.ui.view">
+        <field name="name">sale.order.form.westwoods</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='order_line']/list//field[@name='product_uom_qty']" position="before">
+                <field name="x_product_flow" column_invisible="True"/>
+                <field name="x_aantal_platen"
+                        string="Aantal Platen"
+                        optional="show"
+                        readonly="x_product_flow != 'Sheet'"/>
+                <field name="x_aantal_stuks"
+                        string="Aantal Stuks"
+                        optional="show"
+                        readonly="x_product_flow != 'Piece'"/>
+                <field name="x_aantal_rollen"
+                        string="Aantal Rollen"
+                        optional="show"
+                        readonly="x_product_flow != 'Roll'"/>
+                <field name="x_aantal_pakken"
+                        string="Aantal Pakken"
+                        optional="show"
+                        readonly="x_product_flow != 'Pack'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

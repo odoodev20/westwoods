@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Picking Operations PDF (Odoo 19).
+        Append physical units inside the Quantity cell (keeps table columns stable).
+    -->
+    <template id="report_picking_westwoods" inherit_id="stock.report_picking">
+        <xpath expr="//td[hasclass('o_td_quantity')]" position="inside">
+            <t t-if="move.product_id.product_tmpl_id.x_product_flow">
+                <br/>
+                <span class="text-muted">
+                    <t t-set="flow" t-value="move.product_id.product_tmpl_id.x_product_flow"/>
+                    <t t-set="tech" t-value="move.product_id._get_active_technical_value() or 1.0"/>
+                    <!-- Prefer ordered demand if done qty is still 0 -->
+                    <t t-set="base_qty" t-value="move.quantity or move.product_uom_qty or 0.0"/>
+                    <t t-set="physical" t-value="(base_qty / tech) if tech else 0.0"/>
+                    <span t-esc="'%.2f' % physical"/>
+                    <t t-if="flow == 'Sheet'"> platen</t>
+                    <t t-elif="flow == 'Piece'"> stuks</t>
+                    <t t-elif="flow == 'Roll'"> rollen</t>
+                    <t t-elif="flow == 'Pack'"> pakken</t>
+                </span>
+            </t>
+        </xpath>
+    </template>
+</odoo>
