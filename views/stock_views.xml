@@ -1,13 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Inventory adjustment / quant list: show physical count field -->
+    <!-- Inventory adjustment list: physical count input -->
     <record id="view_stock_quant_tree_inventory_editable_westwoods" model="ir.ui.view">
         <field name="name">stock.quant.tree.inventory.editable.westwoods</field>
         <field name="model">stock.quant</field>
         <field name="inherit_id" ref="stock.view_stock_quant_tree_inventory_editable"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='inventory_quantity']" position="before">
-                <field name="x_counted_physical_units" optional="show"/>
+                <field name="x_counted_physical_units" optional="show" string="Counted (physical)"/>
+            </xpath>
+            <xpath expr="//field[@name='inventory_quantity']" position="after">
+                <field name="x_on_hand_physical" optional="hide" string="On hand (physical)"/>
+                <field name="x_available_packs" optional="hide" string="Packs available"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Quant tree (general) -->
+    <record id="view_stock_quant_tree_westwoods" model="ir.ui.view">
+        <field name="name">stock.quant.tree.westwoods</field>
+        <field name="model">stock.quant</field>
+        <field name="inherit_id" ref="stock.view_stock_quant_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='quantity']" position="after">
+                <field name="x_on_hand_physical" optional="hide" string="Physical"/>
+                <field name="x_available_packs" optional="hide" string="Packs"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Product form: physical stock summary -->
+    <record id="view_product_template_form_stock_westwoods" model="ir.ui.view">
+        <field name="name">product.template.form.stock.westwoods</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='westwoods_technical']" position="inside">
+                <group string="Stock (physical units)" invisible="not x_product_flow">
+                    <group>
+                        <field name="x_ww_qty_physical" readonly="1"/>
+                        <field name="x_ww_packs_available" readonly="1"/>
+                    </group>
+                    <group>
+                        <div class="text-muted" colspan="2">
+                            Inventory is stored in the technical unit of measure.
+                            Physical on-hand = technical qty ÷ conversion factor.
+                            Packs available = floor(physical ÷ Units per Pack).
+                            Packs are never separate stock products.
+                            <br/>
+                            <strong>Import:</strong> map each stock row to one product variant
+                            (internal reference / SKU or variant ID) before any live stock correction.
+                        </div>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_product_product_form_stock_westwoods" model="ir.ui.view">
+        <field name="name">product.product.form.stock.westwoods</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_normal_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='westwoods_technical_variant']" position="inside">
+                <group string="Stock (physical units)" invisible="not x_product_flow">
+                    <field name="x_ww_stock_unit_label" readonly="1"/>
+                    <field name="x_ww_qty_physical" readonly="1"/>
+                    <field name="x_ww_packs_available" readonly="1"/>
+                </group>
             </xpath>
         </field>
     </record>

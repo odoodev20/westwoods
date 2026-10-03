@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_public_category_form_westwoods" model="ir.ui.view">
+        <field name="name">product.public.category.form.westwoods</field>
+        <field name="model">product.public.category</field>
+        <field name="inherit_id" ref="website_sale.product_public_category_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="West-Woods e-commerce notes" col="1">
+                    <div class="text-muted" colspan="2">
+                        <p>
+                            This category URL scopes the shop to product templates assigned here
+                            (and child categories). Each product family appears as one card;
+                            size/colour choices are selected on the product page.
+                        </p>
+                        <p>
+                            Attribute filters on the shop are limited to attributes present on
+                            products in this category. Filtered combinations are marked
+                            <strong>noindex</strong> so they do not create uncontrolled SEO URLs.
+                        </p>
+                        <p>
+                            Use the category description / website editor content for
+                            category-specific SEO text. That content is stored on this category
+                            record and does not overwrite other categories.
+                        </p>
+                    </div>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

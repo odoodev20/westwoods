@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Customer Invoice PDF
+        Same physical breakdown under description as sale order.
+        Quantity column remains technical (m²).
+    -->
+    <template id="report_invoice_document_westwoods" inherit_id="account.report_invoice_document">
+        <xpath expr="//td[@name='account_invoice_line_name']" position="inside">
+            <t t-if="line.product_id and line.product_id.product_tmpl_id.x_product_flow">
+                <div class="text-muted small" t-esc="line._ww_report_subtitle()"/>
+            </t>
+        </xpath>
+    </template>
+</odoo>

@@ -71,7 +71,37 @@ export function updateWestwoodsPricingBox(combinationInfo, parent) {
         return `${currencySymbol} ${formatted}`.trim();
     };
     setText("#ww_display_unit_price", formatMoney(unitPrice));
+    setText("#ww_calc_unit_price", formatMoney(unitPrice));
     setText("#ww_calc_total", formatMoney(total));
+    const derived = unitPrice * factor;
+    setText("#ww_display_derived", formatMoney(derived));
+
+    // Orderable / pack hints from combination_info
+    const blockEl = document.getElementById("ww_order_block");
+    if (blockEl) {
+        if (combinationInfo.westwoods_orderable === false) {
+            blockEl.textContent = combinationInfo.westwoods_block_reason || "This variant cannot be ordered.";
+            blockEl.classList.remove("d-none");
+        } else {
+            blockEl.textContent = "";
+            blockEl.classList.add("d-none");
+        }
+    }
+    const packHint = document.getElementById("ww_pack_hint");
+    if (packHint && combinationInfo.westwoods_pack_sale_mode) {
+        const mode = combinationInfo.westwoods_pack_sale_mode;
+        const units = combinationInfo.westwoods_units_per_pack || 0;
+        if (mode === "required" && units > 0) {
+            packHint.innerHTML = "Pack Sale Required: order in multiples of <strong>" + units + "</strong> physical units.";
+            packHint.classList.remove("d-none");
+        } else if (mode === "optional" && units > 0) {
+            packHint.innerHTML = "Pack size: <strong>" + units + "</strong> physical units (loose units allowed).";
+            packHint.classList.remove("d-none");
+        } else {
+            packHint.classList.add("d-none");
+        }
+    }
+
 
     // Keep main price suffix in sync (e.g. / m²)
     const mainUnit = document.getElementById("ww_main_price_unit");

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Pricelist item form (opened from pricelist) -->
+    <record id="product_pricelist_item_form_westwoods" model="ir.ui.view">
+        <field name="name">product.pricelist.item.form.westwoods</field>
+        <field name="model">product.pricelist.item</field>
+        <field name="inherit_id" ref="product.product_pricelist_item_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='min_quantity']" position="before">
+                <field name="x_ww_volume_threshold_basis"/>
+                <field name="x_ww_threshold_quantity"
+                        invisible="x_ww_volume_threshold_basis == 'none'"/>
+            </xpath>
+            <xpath expr="//field[@name='min_quantity']" position="after">
+                <field name="x_ww_technical_min_qty"
+                        invisible="x_ww_volume_threshold_basis == 'none'"
+                        readonly="1"/>
+            </xpath>
+            <xpath expr="//field[@name='min_quantity']" position="attributes">
+                <attribute name="readonly">x_ww_volume_threshold_basis != 'none'</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Tree/list inside pricelist if present -->
+    <record id="product_pricelist_item_tree_westwoods" model="ir.ui.view">
+        <field name="name">product.pricelist.item.list.westwoods</field>
+        <field name="model">product.pricelist.item</field>
+        <field name="inherit_id" ref="product.product_pricelist_item_tree_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='min_quantity']" position="before">
+                <field name="x_ww_volume_threshold_basis" optional="show" string="WW basis"/>
+                <field name="x_ww_threshold_quantity" optional="show" string="WW threshold"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

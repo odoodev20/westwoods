@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Sale Order / Quotation PDF
+        Keep standard headers/footers. Under each flow product line name:
+        "Aantal platen: 6,0 | m² per plaat: 3,125"
+        Quantity column stays technical (m² / lm / stuk).
+    -->
+    <template id="report_saleorder_document_westwoods" inherit_id="sale.report_saleorder_document">
+        <xpath expr="//span[@t-field='line.name']" position="after">
+            <t t-if="line.product_id and line.product_id.product_tmpl_id.x_product_flow">
+                <div class="text-muted small" t-esc="line._ww_report_subtitle()"/>
+            </t>
+        </xpath>
+    </template>
+</odoo>

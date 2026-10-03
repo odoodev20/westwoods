@@ -1,31 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- ============================================================
-         Product Template Form: Technical Content page
-         ============================================================ -->
     <record id="view_product_template_form_westwoods" model="ir.ui.view">
         <field name="name">product.template.form.westwoods</field>
         <field name="model">product.template</field>
         <field name="inherit_id" ref="product.product_template_form_view"/>
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="inside">
-                <page string="Technical Content (No Variants)" name="westwoods_technical">
+                <page string="Technical Content" name="westwoods_technical">
                     <group>
                         <group string="Product Flow">
                             <field name="x_product_flow"/>
+                            <field name="x_ww_variant_matrix_display"/>
                         </group>
-                        <group string="Conversion Factors (default for all variants)">
+                        <group string="Conversion Defaults">
                             <field name="x_m2_per_plaat"
-                                    invisible="x_product_flow != 'Sheet'"/>
+                                    invisible="x_product_flow != 'Plate'"/>
                             <field name="x_lm_per_stuk"
-                                    invisible="x_product_flow != 'Piece'"/>
+                                    invisible="x_product_flow != 'Wood'"/>
                             <field name="x_m2_per_rol"
                                     invisible="x_product_flow != 'Roll'"/>
-                            <field name="x_m2_per_pak"
-                                    invisible="x_product_flow != 'Pack'"/>
+                            <div class="text-muted" invisible="x_product_flow != 'Piece'">
+                                Piece flow: physical quantity equals technical quantity (no conversion).
+                            </div>
                         </group>
                     </group>
-                    <group string="All Factors (reference)"
+                    <group string="Pack Sale (generic layer — not a Product Flow)"
+                           invisible="not x_product_flow">
+                        <group>
+                            <field name="x_pack_sale_mode"/>
+                            <field name="x_units_per_pack"
+                                    invisible="x_pack_sale_mode == 'none'"/>
+                        </group>
+                        <group>
+                            <div class="text-muted">
+                                <p><strong>None:</strong> order only physical units (sheets / pieces / rolls).</p>
+                                <p><strong>Optional:</strong> loose units or full packs.</p>
+                                <p><strong>Required:</strong> only complete pack multiples (validated in Phase 2).</p>
+                                <p>Inventory always stays in underlying physical units.</p>
+                            </div>
+                        </group>
+                    </group>
+                    <group string="All conversion defaults (reference)"
                            invisible="not x_product_flow">
                         <group>
                             <field name="x_m2_per_plaat"/>
@@ -33,23 +48,17 @@
                         </group>
                         <group>
                             <field name="x_m2_per_rol"/>
-                            <field name="x_m2_per_pak"/>
                         </group>
                     </group>
-                    <div class="text-muted" invisible="not x_product_flow">
-                        These values are the default for every variant.
-                        To override per variant: open <strong>Variants</strong> → open a variant
-                        → set the matching <strong>Variant m² / lm</strong> field (leave 0 to use this default).
+                    <div class="alert alert-info" role="alert" invisible="not x_product_flow">
+                        Template values are defaults for every variant.
+                        Override per variant via Variants → variant form → Technical Content (Variant Override).
                     </div>
                 </page>
             </xpath>
         </field>
     </record>
 
-    <!-- ============================================================
-         Product Variant EASY form (opened from Variants smart button)
-         This is the form you see – it has NO notebook.
-         ============================================================ -->
     <record id="view_product_variant_easy_edit_westwoods" model="ir.ui.view">
         <field name="name">product.product.view.form.easy.westwoods</field>
         <field name="model">product.product</field>
@@ -59,25 +68,26 @@
                 <group name="westwoods_variant_factors" string="Technical Content (Variant Override)">
                     <field name="x_product_flow" readonly="1"/>
                     <field name="x_variant_m2_per_plaat"
-                            invisible="x_product_flow != 'Sheet'"/>
+                            invisible="x_product_flow != 'Plate'"/>
                     <field name="x_variant_lm_per_stuk"
-                            invisible="x_product_flow != 'Piece'"/>
+                            invisible="x_product_flow != 'Wood'"/>
                     <field name="x_variant_m2_per_rol"
                             invisible="x_product_flow != 'Roll'"/>
-                    <field name="x_variant_m2_per_pak"
-                            invisible="x_product_flow != 'Pack'"/>
+                    <field name="x_variant_pack_sale_mode"/>
+                    <field name="x_variant_units_per_pack"/>
+                    <field name="x_ww_use_variant_price_override"/>
+                    <field name="x_ww_variant_base_sale_price"
+                            invisible="not x_ww_use_variant_price_override"/>
                     <div colspan="2" class="text-muted">
-                        Leave at 0 to use the template default from
-                        <em>Technical Content (No Variants)</em>.
+                        Conversion: leave at 0 to use the template default.
+                        Pack Sale: Inherit uses the template mode / units.
+                        Variant base price: enable the switch — zero is a real price, not inherit.
                     </div>
                 </group>
             </xpath>
         </field>
     </record>
 
-    <!-- ============================================================
-         Full product.product form (if opened from Product Variants menu)
-         ============================================================ -->
     <record id="view_product_product_form_westwoods" model="ir.ui.view">
         <field name="name">product.product.form.westwoods</field>
         <field name="model">product.product</field>
@@ -86,17 +96,24 @@
             <xpath expr="//notebook" position="inside">
                 <page string="Technical Content (Variant)" name="westwoods_technical_variant">
                     <group>
-                        <group string="Variant Conversion Overrides">
+                        <group string="Conversion Overrides">
                             <field name="x_product_flow" readonly="1"/>
                             <field name="x_variant_m2_per_plaat"/>
                             <field name="x_variant_lm_per_stuk"/>
                             <field name="x_variant_m2_per_rol"/>
-                            <field name="x_variant_m2_per_pak"/>
                         </group>
-                        <group string="Help">
-                            <div class="text-muted">
-                                Leave a field at 0 to fall back to the template-level factor.
-                                Only the factor matching the Product Flow is used.
+                        <group string="Pack Sale Override">
+                            <field name="x_variant_pack_sale_mode"/>
+                            <field name="x_variant_units_per_pack"/>
+                        </group>
+                        <group string="Variant Base Sales Price">
+                            <field name="x_ww_use_variant_price_override"/>
+                            <field name="x_ww_variant_base_sale_price"
+                                    invisible="not x_ww_use_variant_price_override"/>
+                            <div colspan="2" class="text-muted">
+                                When enabled, this price (in the flow unit: €/m², €/lm, or €/piece)
+                                is the effective base for pricelists. Zero does not mean inherit.
+                                Attribute price extras are ignored for this variant.
                             </div>
                         </group>
                     </group>
@@ -105,9 +122,6 @@
         </field>
     </record>
 
-    <!-- ============================================================
-         Variants list: optional columns for quick overview / edit
-         ============================================================ -->
     <record id="view_product_variant_list_westwoods" model="ir.ui.view">
         <field name="name">product.product.list.westwoods</field>
         <field name="model">product.product</field>
@@ -115,10 +129,13 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='lst_price']" position="after">
                 <field name="x_product_flow" optional="hide"/>
-                <field name="x_variant_m2_per_plaat" optional="hide" string="Var. m²/plaat"/>
-                <field name="x_variant_lm_per_stuk" optional="hide" string="Var. lm/stuk"/>
-                <field name="x_variant_m2_per_rol" optional="hide" string="Var. m²/rol"/>
-                <field name="x_variant_m2_per_pak" optional="hide" string="Var. m²/pak"/>
+                <field name="x_variant_m2_per_plaat" optional="hide" string="Var. m²/sheet"/>
+                <field name="x_variant_lm_per_stuk" optional="hide" string="Var. lm/piece"/>
+                <field name="x_variant_m2_per_rol" optional="hide" string="Var. m²/roll"/>
+                <field name="x_variant_pack_sale_mode" optional="hide" string="Pack mode"/>
+                <field name="x_variant_units_per_pack" optional="hide" string="Units/pack"/>
+                <field name="x_ww_use_variant_price_override" optional="hide" string="Price override"/>
+                <field name="x_ww_variant_base_sale_price" optional="hide" string="Variant base price"/>
             </xpath>
         </field>
     </record>

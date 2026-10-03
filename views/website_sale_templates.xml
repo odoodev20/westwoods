@@ -1,45 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- ============================================================
-         PRODUCT PAGE – unit on main price + clean pricing info box
+         PRODUCT PAGE — Phase 7 architecture
+         Order: standard price → attributes/CTA (core) → live price → matrix
+                → per-product website_description (core Odoo)
          ============================================================ -->
-    <template id="product_price_westwoods_unit" inherit_id="website_sale.product_price" name="WestWoods Main Price Unit">
-        <!-- Append technical unit after the main price (e.g. / m²) -->
-        <xpath expr="//span[hasclass('oe_price')]|//h3//span[hasclass('oe_currency_value')]|//*[hasclass('product_price')]" position="attributes">
-            <!-- no-op on attributes; injection below is more reliable -->
-        </xpath>
-    </template>
 
-    <template id="product_westwoods_pricing_info" inherit_id="website_sale.product" name="WestWoods Product Pricing Info">
-        <!-- Append / m² (or lm) next to the main product price -->
+    <!-- Append technical unit on main price (e.g. / m²) -->
+    <template id="product_westwoods_main_price_unit" inherit_id="website_sale.product" name="WestWoods Main Price Unit">
         <xpath expr="//div[hasclass('o_wsale_product_details_content_section_price')]" position="inside">
             <t t-set="ww_flow_main" t-value="product.x_product_flow"/>
             <t t-if="ww_flow_main">
                 <t t-set="ww_tech_unit_main"
-                   t-value="{'Sheet': 'm²', 'Piece': 'lm', 'Roll': 'm²', 'Pack': 'm²'}.get(ww_flow_main, '')"/>
+                   t-value="{'Plate': 'm²', 'Wood': 'lm', 'Piece': 'stuk', 'Roll': 'm²', 'Sheet': 'm²'}.get(ww_flow_main, '')"/>
                 <span class="westwoods-main-price-unit text-muted fs-5 ms-1"
-                      id="ww_main_price_unit">
+                      id="ww_main_price_unit"
+                      t-if="ww_tech_unit_main">
                     / <t t-esc="ww_tech_unit_main"/>
                 </span>
             </t>
         </xpath>
+    </template>
 
-        <!-- Pricing information box (cleaned) -->
-        <xpath expr="//div[hasclass('o_wsale_product_details_content_section_price')]" position="after">
+    <!-- Live price + matrix AFTER CTA so selector comes first -->
+    <template id="product_westwoods_live_and_matrix" inherit_id="website_sale.product" name="WestWoods Live Price and Matrix">
+        <xpath expr="//div[hasclass('o_wsale_product_details_content_section_cta')]" position="before">
             <t t-set="ww_flow" t-value="product.x_product_flow"/>
             <t t-if="ww_flow">
                 <t t-set="ww_variant_id" t-value="product._get_first_possible_variant_id()"/>
                 <t t-set="ww_product"
                    t-value="ww_variant_id and product.env['product.product'].browse(ww_variant_id) or product.product_variant_id"/>
-                <t t-set="ww_tech" t-value="ww_product._get_active_technical_value() if ww_product else 1.0"/>
+                <t t-set="ww_tech" t-value="ww_product._get_active_technical_value() if ww_product else 0.0"/>
                 <t t-set="ww_unit_label"
-                   t-value="{'Sheet': 'platen', 'Piece': 'stuks', 'Roll': 'rollen', 'Pack': 'pakken'}.get(ww_flow, '')"/>
+                   t-value="{'Plate': 'platen', 'Wood': 'stuks', 'Piece': 'stuks', 'Roll': 'rollen', 'Sheet': 'platen'}.get(ww_flow, '')"/>
                 <t t-set="ww_factor_label"
-                   t-value="{'Sheet': 'm² per plaat', 'Piece': 'lm per stuk', 'Roll': 'm² per rol', 'Pack': 'm² per pak'}.get(ww_flow, '')"/>
+                   t-value="{'Plate': 'm² per plaat', 'Wood': 'lm per stuk', 'Piece': '', 'Roll': 'm² per rol', 'Sheet': 'm² per plaat'}.get(ww_flow, '')"/>
                 <t t-set="ww_tech_unit"
-                   t-value="{'Sheet': 'm²', 'Piece': 'lm', 'Roll': 'm²', 'Pack': 'm²'}.get(ww_flow, '')"/>
+                   t-value="{'Plate': 'm²', 'Wood': 'lm', 'Piece': 'stuk', 'Roll': 'm²', 'Sheet': 'm²'}.get(ww_flow, '')"/>
                 <t t-set="ww_unit_price" t-value="combination_info.get('price', product.list_price) or 0.0"/>
+                <t t-set="ww_derived" t-value="(ww_unit_price or 0.0) * (ww_tech or 0.0)"/>
 
+                <!-- 3. Live price-information block -->
                 <div class="o_wsale_product_details_content_section mb-4 westwoods-pricing-box border rounded p-3 bg-light"
                      id="westwoods_pricing_box"
                      t-att-data-factor="ww_tech"
@@ -59,40 +60,142 @@
                                 <span class="text-muted"> / <span class="ww_tech_unit" t-esc="ww_tech_unit"/></span>
                             </strong>
                         </li>
-                        <li>
+                        <li t-if="ww_factor_label">
                             <span class="text-muted" id="ww_display_factor_label" t-esc="ww_factor_label"/>:
-                            <strong class="ms-1" id="ww_display_factor" t-esc="'%.2f' % ww_tech"/>
+                            <strong class="ms-1" id="ww_display_factor" t-esc="'%.4f' % ww_tech if ww_tech else '—'"/>
                             <span class="text-muted ms-1 ww_tech_unit" t-esc="ww_tech_unit"/>
                             <span class="text-muted"> per physical unit</span>
                         </li>
+                        <li t-if="ww_tech">
+                            <span class="text-muted">Price per physical unit:</span>
+                            <strong class="ms-1" id="ww_display_derived"
+                                    t-esc="ww_derived"
+                                    t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
+                            <span class="text-muted"> / <span class="ww_unit_label" t-esc="ww_unit_label.rstrip('n') if ww_unit_label.endswith('n') else ww_unit_label"/></span>
+                        </li>
                     </ul>
+
+                    <div t-if="ww_product and ww_product._ww_pack_config_error()" class="alert alert-warning small py-2">
+                        Pack Sale is configured but Units per Pack is missing. Pack rules are disabled until fixed.
+                    </div>
+                    <div id="ww_pack_hint" class="small text-muted mb-2"
+                         t-if="ww_product and ww_product._get_effective_pack_sale_mode() != 'none'">
+                        <t t-set="ww_pack_mode" t-value="ww_product._get_effective_pack_sale_mode()"/>
+                        <t t-set="ww_pack_units" t-value="ww_product._get_units_per_pack()"/>
+                        <span t-if="ww_pack_mode == 'required'">
+                            Pack Sale Required: order in multiples of
+                            <strong t-esc="ww_pack_units"/> physical units.
+                        </span>
+                        <span t-if="ww_pack_mode == 'optional'">
+                            Pack size: <strong t-esc="ww_pack_units"/> physical units (loose units allowed).
+                        </span>
+                    </div>
+                    <div id="ww_order_block" class="alert alert-danger small py-2 d-none" role="alert"/>
+
                     <div class="border-top pt-2 small">
                         <div class="text-muted mb-1">Calculation for selected quantity:</div>
-                        <div>
+                        <div id="ww_live_summary" class="mb-1">
                             <span id="ww_calc_physical">1</span>
                             <span class="ms-1 ww_unit_label" t-esc="ww_unit_label"/>
-                            =
-                            <span id="ww_calc_technical" class="ms-1" t-esc="'%.2f' % ww_tech"/>
-                            <span class="ms-1 ww_tech_unit" t-esc="ww_tech_unit"/>
-                            ×
-                            <span class="ms-1"
-                                  id="ww_calc_unit_price"
+                            <t t-if="ww_flow != 'Piece'">
+                                ·
+                                <span id="ww_calc_technical" t-esc="'%.4f' % ww_tech if ww_tech else '0'"/>
+                                <span class="ms-1 ww_tech_unit" t-esc="ww_tech_unit"/>
+                            </t>
+                            ·
+                            <span id="ww_calc_unit_price"
                                   t-esc="ww_unit_price"
                                   t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
+                            /
+                            <span class="ww_tech_unit" t-esc="ww_tech_unit"/>
                             =
                             <strong class="ms-1" id="ww_calc_total"
-                                    t-esc="ww_unit_price * ww_tech"
+                                    t-esc="ww_unit_price * (ww_tech or 1.0)"
                                     t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
                         </div>
                     </div>
                 </div>
+
+                <!-- 4. Dynamic Variant Matrix -->
+                <t t-if="product._ww_should_show_matrix()">
+                    <t t-set="ww_pricelist" t-value="request.pricelist if request else website.pricelist_ids[:1]"/>
+                    <t t-set="ww_matrix"
+                       t-value="product._ww_get_variant_matrix_rows(pricelist=ww_pricelist, currency=website.currency_id)"/>
+                    <div class="o_wsale_product_details_content_section o_ww_variant_matrix mb-4"
+                         id="westwoods_variant_matrix"
+                         t-if="ww_matrix and ww_matrix.get('rows')">
+                        <h5 class="mb-3">Variant overview</h5>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th t-foreach="ww_matrix['attr_lines']" t-as="al" t-esc="al['name']"/>
+                                        <th t-if="ww_matrix.get('factor_header')" t-esc="ww_matrix['factor_header']"/>
+                                        <th t-esc="ww_matrix.get('unit_price_header') or 'Price'"/>
+                                        <th t-esc="ww_matrix.get('derived_price_header') or 'Unit'"/>
+                                        <th t-if="ww_matrix.get('show_pack_column')">Pack</th>
+                                        <t t-if="ww_matrix.get('show_tiers')">
+                                            <th t-foreach="ww_matrix['tiers']" t-as="tier"
+                                                class="text-end">
+                                                <t t-esc="tier['label']"/>
+                                            </th>
+                                        </t>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="ww_matrix['rows']" t-as="row"
+                                        t-att-data-product-id="row['product_id']"
+                                        t-att-data-ptav-ids="','.join(str(i) for i in row['ptav_ids'])"
+                                        t-att-class="'o_ww_matrix_row' + (' text-muted' if not row['orderable'] else '')"
+                                        role="button"
+                                        style="cursor: pointer;">
+                                        <td t-foreach="row['attr_cells']" t-as="cell">
+                                            <t t-esc="cell['value_name']"/>
+                                        </td>
+                                        <td t-if="ww_matrix.get('factor_header')">
+                                            <t t-if="row['factor']">
+                                                <t t-esc="'%.4f' % row['factor']"/>
+                                            </t>
+                                            <t t-else="">—</t>
+                                        </td>
+                                        <td>
+                                            <span t-esc="row['unit_price']"
+                                                  t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
+                                        </td>
+                                        <td>
+                                            <span t-esc="row['derived_price']"
+                                                  t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
+                                        </td>
+                                        <td t-if="ww_matrix.get('show_pack_column')">
+                                            <t t-if="row['units_per_pack']" t-esc="row['units_per_pack']"/>
+                                            <t t-else="">—</t>
+                                        </td>
+                                        <t t-if="ww_matrix.get('show_tiers')">
+                                            <td t-foreach="row['tier_cells']" t-as="tc" class="text-end">
+                                                <t t-if="tc">
+                                                    <div t-esc="tc['unit_price']"
+                                                         t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"/>
+                                                    <div t-if="tc['advantage_pct']" class="small text-success">
+                                                        -<t t-esc="'%.1f' % tc['advantage_pct']"/>%
+                                                    </div>
+                                                </t>
+                                                <t t-else="">—</t>
+                                            </td>
+                                        </t>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="small text-muted mt-2 mb-0">
+                            Prices are indicative. Final price is calculated when you add to cart.
+                            Click a row to select that variant.
+                        </p>
+                    </div>
+                </t>
             </t>
         </xpath>
     </template>
 
-    <!-- ============================================================
-         CART LINES – physical qty + technical price breakdown
-         ============================================================ -->
     <template id="cart_lines_westwoods_info" inherit_id="website_sale.cart_lines" name="WestWoods Cart Line Info">
         <xpath expr="//t[@t-call='website_sale.cart_line_description_following_lines']" position="after">
             <t t-set="flow" t-value="line.product_id.product_tmpl_id.x_product_flow"/>
@@ -100,9 +203,9 @@
                 <t t-set="tech" t-value="line.product_id._get_active_technical_value() or 1.0"/>
                 <t t-set="physical" t-value="line._get_physical_quantity()"/>
                 <t t-set="unit_label"
-                   t-value="{'Sheet': 'platen', 'Piece': 'stuks', 'Roll': 'rollen', 'Pack': 'pakken'}.get(flow, '')"/>
+                   t-value="{'Plate': 'platen', 'Wood': 'stuks', 'Piece': 'stuks', 'Roll': 'rollen', 'Sheet': 'platen'}.get(flow, '')"/>
                 <t t-set="tech_unit"
-                   t-value="{'Sheet': 'm²', 'Piece': 'lm', 'Roll': 'm²', 'Pack': 'm²'}.get(flow, '')"/>
+                   t-value="{'Plate': 'm²', 'Wood': 'lm', 'Piece': 'stuk', 'Roll': 'm²', 'Sheet': 'm²'}.get(flow, '')"/>
                 <div class="small text-muted mt-1 westwoods-cart-line-info">
                     <span t-esc="'%.0f' % physical if float(physical).is_integer() else '%.2f' % physical"/>
                     <span class="ms-1" t-esc="unit_label"/>
@@ -118,11 +221,6 @@
             </t>
         </xpath>
     </template>
-
-
-    <!-- ============================================================
-         Checkout / payment summary: badge shows physical qty
-         ============================================================ -->
     <template id="cart_summary_content_westwoods"
               inherit_id="website_sale.cart_summary_content"
               name="WestWoods Cart Summary Physical Qty">
@@ -140,4 +238,15 @@
             </span>
         </xpath>
     </template>
+
+
+    <!-- Filter / facet URLs: noindex to avoid uncontrolled SEO URLs -->
+    <template id="westwoods_noindex_layout" inherit_id="website.layout" name="WestWoods Noindex Filtered Shop">
+        <xpath expr="//head" position="inside">
+            <t t-if="ww_noindex">
+                <meta name="robots" content="noindex, follow"/>
+            </t>
+        </xpath>
+    </template>
+
 </odoo>
